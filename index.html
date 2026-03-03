@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Logo Animado 3D - Ajuste Total de Eixos</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: white; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        scene.add(new THREE.AmbientLight(0xffffff, 2));
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 5, 5);
+        scene.add(light);
+
+        const loader = new GLTFLoader();
+        
+        loader.load('Pintado logo.glb', function (gltf) {
+            const model = gltf.scene;
+            const pivot = new THREE.Group();
+            scene.add(pivot);
+            
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            
+            // Centraliza o logo no Pivot
+            model.position.set(-center.x, -center.y, -center.z);
+
+            // ==========================================
+            // AJUSTE MANUAL DOS 3 EIXOS (MODIFICA AQUI)
+            // ==========================================
+            
+            // Define os graus de correção para cada direção:
+            const grausX = -25;   // Inclinação para frente / trás
+            const grausY = 2;   // Rotação da "face" (como um volante)
+            const grausZ = 7;  // Tombamento lateral (esquerda / direita)
+            
+            // Aplica as correções
+            model.rotation.x = grausX * (Math.PI / 250);
+            model.rotation.y = grausY * (Math.PI / 180);
+            model.rotation.z = grausZ * (Math.PI / 180);
+            
+            // ==========================================
+
+            pivot.add(model);
+            camera.position.z = box.getSize(new THREE.Vector3()).length() * 1.5;
+
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // O Pivot gira apenas no eixo Y global (o giro do site)
+                pivot.rotation.y += 0.03; 
+                
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
